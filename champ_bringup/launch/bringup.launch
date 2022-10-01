@@ -9,6 +9,7 @@
     <arg name="rviz" default="false" />
     <arg name="rviz_ref_frame" default="odom"/>
     <arg name="has_imu" default="true" />
+    <arg name="imu_topic" default="imu/data"/>
     <arg name="lite" default="false" />
     <arg name="laser" default="sim" />
     <arg name="joint_controller_topic" default="joint_group_position_controller/command" />
@@ -76,6 +77,7 @@
             <remap from="odometry/filtered" to="odom" />
             <rosparam command="load" file="$(find champ_base)/config/ekf/footprint_to_odom.yaml" />
             <param name="publish_tf" value="$(arg publish_odom_tf)"/>
+            <param name="imu0" value="$(arg imu_topic)"/>
         </node>
 
         <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find champ_description)/rviz/urdf_viewer.rviz -f $(arg rviz_ref_frame)" output="screen"/>
