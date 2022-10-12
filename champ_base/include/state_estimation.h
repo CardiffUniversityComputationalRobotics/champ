@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 
+#include <tf/tf.h>
+
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/JointState.h>
 

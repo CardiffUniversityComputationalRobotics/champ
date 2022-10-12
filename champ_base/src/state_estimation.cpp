@@ -48,7 +48,7 @@ StateEstimation::StateEstimation(ros::NodeHandle *nh, ros::NodeHandle *pnh) : od
   nh->getParam("gait/odom_scaler", gait_config_.odom_scaler);
   pnh->param("orientation_from_imu", orientation_from_imu_, false);
   pnh->param("use_robot_pose", use_robot_pose_, false);
-  pnh->param("use_robot_velicity", use_robot_velocity_, false);
+  pnh->param("use_robot_velocity", use_robot_velocity_, false);
   pnh->param("publish_tf", publish_tf_, false);
 
   if (orientation_from_imu_)
@@ -87,6 +87,7 @@ StateEstimation::StateEstimation(ros::NodeHandle *nh, ros::NodeHandle *pnh) : od
                                       &StateEstimation::publishBaseToFootprint_,
                                       this);
   robot_pose_available_ = false;
+  robot_velocity_available_ = false;
 }
 
 void StateEstimation::synchronized_callback_(const sensor_msgs::JointStateConstPtr &joints_msg, const champ_msgs::ContactsStampedConstPtr &contacts_msg)
@@ -163,6 +164,20 @@ void StateEstimation::publishFootprintToOdom_(const ros::TimerEvent &event)
   y_pos_ += delta_y;
   heading_ += delta_heading;
 
+  if (use_robot_pose_ && robot_pose_available_)
+  {
+
+    tf::Quaternion q(
+        last_robot_pose_->pose.orientation.x,
+        last_robot_pose_->pose.orientation.y,
+        last_robot_pose_->pose.orientation.z,
+        last_robot_pose_->pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    heading_ = yaw;
+  }
+
   // calculate robot's heading_ in quaternion angle
   tf2::Quaternion odom_quat;
   odom_quat.setRPY(0, 0, heading_);
@@ -202,6 +217,29 @@ void StateEstimation::publishFootprintToOdom_(const ros::TimerEvent &event)
   odom.twist.twist.angular.z = current_velocities_.angular.z;
 
   footprint_to_odom_publisher_.publish(odom);
+
+  if (publish_tf_)
+  {
+
+    ros::Time current_time = ros::Time::now();
+
+    geometry_msgs::TransformStamped odom_trans;
+    odom_trans.header.stamp = current_time;
+    odom_trans.header.frame_id = "odom";
+    odom_trans.child_frame_id = "base_footprint";
+
+    odom_trans.transform.translation.x = x_pos_;
+    odom_trans.transform.translation.y = y_pos_;
+    odom_trans.transform.translation.z = 0;
+
+    odom_trans.transform.rotation.x = odom_quat.x();
+    odom_trans.transform.rotation.y = odom_quat.y();
+    odom_trans.transform.rotation.z = odom_quat.z();
+    odom_trans.transform.rotation.w = odom_quat.w();
+
+    // send the transform
+    base_broadcaster_.sendTransform(odom_trans);
+  }
 }
 
 visualization_msgs::Marker StateEstimation::createMarker_(geometry::Transformation foot_pos, int id, std::string frame_id)
@@ -443,10 +481,13 @@ void StateEstimation::publishBaseToFootprint_(const ros::TimerEvent &event)
       base_trans.transform.translation.y = 0;
       base_trans.transform.translation.z = last_robot_pose_->pose.position.z;
 
-      base_trans.transform.rotation.x = last_robot_pose_->pose.orientation.x;
-      base_trans.transform.rotation.y = last_robot_pose_->pose.orientation.y;
-      base_trans.transform.rotation.z = last_robot_pose_->pose.orientation.z;
-      base_trans.transform.rotation.w = last_robot_pose_->pose.orientation.w;
+      tf2::Quaternion myQuaternion;
+      myQuaternion.setRPY(0, 0, heading_);
+
+      base_trans.transform.rotation.x = myQuaternion.getX();
+      base_trans.transform.rotation.y = myQuaternion.getY();
+      base_trans.transform.rotation.z = myQuaternion.getZ();
+      base_trans.transform.rotation.w = myQuaternion.getW();
 
       // send the transform
       base_broadcaster_.sendTransform(base_trans);
