@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <tf2/LinearMath/Quaternion.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
 
 #include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/JointState.h>
@@ -54,56 +56,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class StateEstimation
 {
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::JointState, champ_msgs::ContactsStamped> SyncPolicy;
-    typedef message_filters::Synchronizer<SyncPolicy> Sync;
-    boost::shared_ptr<Sync> sync;
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::JointState, champ_msgs::ContactsStamped> SyncPolicy;
+  typedef message_filters::Synchronizer<SyncPolicy> Sync;
+  boost::shared_ptr<Sync> sync;
 
-    message_filters::Subscriber<sensor_msgs::JointState> joint_states_subscriber_;
-    message_filters::Subscriber<champ_msgs::ContactsStamped> foot_contacts_subscriber_;
-    ros::Subscriber imu_subscriber_;
+  message_filters::Subscriber<sensor_msgs::JointState> joint_states_subscriber_;
+  message_filters::Subscriber<champ_msgs::ContactsStamped> foot_contacts_subscriber_;
+  ros::Subscriber imu_subscriber_;
+  ros::Subscriber robot_pose_subscriber_;
+  ros::Subscriber robot_velocity_subscriber_;
 
-    ros::Publisher footprint_to_odom_publisher_;
-    ros::Publisher base_to_footprint_publisher_;
-    ros::Publisher foot_publisher_;
+  ros::Publisher footprint_to_odom_publisher_;
+  ros::Publisher base_to_footprint_publisher_;
+  ros::Publisher foot_publisher_;
 
-    tf2_ros::TransformBroadcaster base_broadcaster_;
+  tf2_ros::TransformBroadcaster base_broadcaster_;
 
-    ros::Timer odom_data_timer_;
-    ros::Timer base_pose_timer_;
+  ros::Timer odom_data_timer_;
+  ros::Timer base_pose_timer_;
 
-    champ::Velocities current_velocities_;
-    geometry::Transformation current_foot_positions_[4];
-    geometry::Transformation target_foot_positions_[4];
+  champ::Velocities current_velocities_;
+  geometry::Transformation current_foot_positions_[4];
+  geometry::Transformation target_foot_positions_[4];
 
-    float x_pos_;
-    float y_pos_;
-    float heading_;
-    ros::Time last_vel_time_;
-    ros::Time last_sync_time_;
-    sensor_msgs::ImuConstPtr last_imu_;
+  float x_pos_;
+  float y_pos_;
+  float heading_;
+  ros::Time last_vel_time_;
+  ros::Time last_sync_time_;
+  sensor_msgs::ImuConstPtr last_imu_;
+  geometry_msgs::PoseStampedConstPtr last_robot_pose_;
+  geometry_msgs::TwistStampedConstPtr last_robot_velocity_;
 
-    champ::GaitConfig gait_config_;
+  champ::GaitConfig gait_config_;
 
-    champ::QuadrupedBase base_;
-    champ::Odometry odometry_;
+  champ::QuadrupedBase base_;
+  champ::Odometry odometry_;
 
-    std::vector<std::string> joint_names_;
-    std::string base_name_;
-    std::string node_namespace_;
-    std::string odom_frame_;
-    std::string base_footprint_frame_;
-    std::string base_link_frame_;
-    bool orientation_from_imu_;
+  std::vector<std::string> joint_names_;
+  std::string base_name_;
+  std::string node_namespace_;
+  std::string odom_frame_;
+  std::string base_footprint_frame_;
+  std::string base_link_frame_;
+  bool orientation_from_imu_;
+  bool use_robot_pose_;
+  bool robot_pose_available_;
+  bool use_robot_velocity_;
+  bool robot_velocity_available_;
+  bool publish_tf_;
 
-    void publishFootprintToOdom_(const ros::TimerEvent& event);
-    void publishBaseToFootprint_(const ros::TimerEvent& event);
-    void synchronized_callback_(const sensor_msgs::JointStateConstPtr&, const champ_msgs::ContactsStampedConstPtr&);
-    void imu_callback_(const sensor_msgs::ImuConstPtr&);
+  void publishFootprintToOdom_(const ros::TimerEvent &event);
+  void publishBaseToFootprint_(const ros::TimerEvent &event);
+  void synchronized_callback_(const sensor_msgs::JointStateConstPtr &, const champ_msgs::ContactsStampedConstPtr &);
+  void imu_callback_(const sensor_msgs::ImuConstPtr &);
+  void robot_pose_callback_(const geometry_msgs::PoseStampedConstPtr &);
+  void robot_velocity_callback_(const geometry_msgs::TwistStampedConstPtr &);
 
-    visualization_msgs::Marker createMarker_(geometry::Transformation foot_pos, int id, std::string frame_id);
+  visualization_msgs::Marker createMarker_(geometry::Transformation foot_pos, int id, std::string frame_id);
 
-    public:
-        StateEstimation(ros::NodeHandle *nh, ros::NodeHandle *pnh);
+public:
+  StateEstimation(ros::NodeHandle *nh, ros::NodeHandle *pnh);
 };
 
 #endif
