@@ -279,7 +279,7 @@ void StateEstimation::publishBaseToFootprint_(const ros::TimerEvent &event)
   base_.getFootPositions(current_foot_positions_);
 
   visualization_msgs::MarkerArray marker_array;
-  float robot_height = 0.0, all_height = 0.0;
+  double robot_height = 0.0, all_height = 0.0;
   int foot_in_contact = 0;
   geometry::Transformation touching_feet[4];
   bool no_contact = false;
@@ -451,7 +451,7 @@ void StateEstimation::publishBaseToFootprint_(const ros::TimerEvent &event)
 
   if (!use_robot_pose_)
   {
-    pose_msg.pose.pose.position.z = -(robot_height / (float)foot_in_contact);
+    pose_msg.pose.pose.position.z = -(robot_height / (double)foot_in_contact);
 
     pose_msg.pose.pose.orientation.x = quaternion.x();
     pose_msg.pose.pose.orientation.y = quaternion.y();
@@ -482,7 +482,7 @@ void StateEstimation::publishBaseToFootprint_(const ros::TimerEvent &event)
       base_trans.transform.translation.z = last_robot_pose_->pose.position.z;
 
       tf2::Quaternion myQuaternion;
-      myQuaternion.setRPY(0, 0, heading_);
+      myQuaternion.setRPY(0, 0, 0);
 
       base_trans.transform.rotation.x = myQuaternion.getX();
       base_trans.transform.rotation.y = myQuaternion.getY();

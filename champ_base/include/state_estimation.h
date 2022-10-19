@@ -81,9 +81,9 @@ class StateEstimation
   geometry::Transformation current_foot_positions_[4];
   geometry::Transformation target_foot_positions_[4];
 
-  float x_pos_;
-  float y_pos_;
-  float heading_;
+  double x_pos_;
+  double y_pos_;
+  double heading_;
   ros::Time last_vel_time_;
   ros::Time last_sync_time_;
   sensor_msgs::ImuConstPtr last_imu_;
